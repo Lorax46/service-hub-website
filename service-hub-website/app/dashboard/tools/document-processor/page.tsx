@@ -12,9 +12,9 @@ export default async function DocumentProcessorPage() {
       <main className="container py-8">
         <div className="mx-auto max-w-3xl">
           <div className="mb-8">
-            <h1 className="font-bold text-3xl text-balance">Processador de Documentos</h1>
+            <h1 className="font-bold text-3xl text-balance">Relatórios e Drift de Dados</h1>
             <p className="mt-2 text-muted-foreground text-pretty">
-              Faça upload de seus documentos e processe-os através do n8n
+              Execute flows fixos do n8n sem expor os webhooks para o usuário.
             </p>
           </div>
 

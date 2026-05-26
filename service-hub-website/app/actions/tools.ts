@@ -1,6 +1,7 @@
 "use server"
 
 import { requireAuth } from "@/lib/auth"
+import { getN8nFlow, type N8nFlowId } from "@/lib/n8n-flows"
 import { sendToWebhook } from "@/lib/webhook-client"
 
 export async function processDocumentAction(formData: FormData) {
@@ -50,5 +51,40 @@ export async function executeWorkflowAction(webhookUrl: string, payload: any) {
   return {
     success: false,
     message: result.error || "Erro ao executar workflow",
+  }
+}
+
+export async function executeN8nFlowAction(flowId: N8nFlowId) {
+  await requireAuth()
+
+  const flow = getN8nFlow(flowId)
+
+  if (!flow) {
+    return { success: false, message: "Flow n8n não encontrado" }
+  }
+
+  const result = await sendToWebhook(
+    {
+      id: flow.id,
+      name: flow.name,
+      url: flow.url,
+    },
+    {
+      flowId: flow.id,
+      requestedAt: new Date().toISOString(),
+    },
+  )
+
+  if (result.success) {
+    return {
+      success: true,
+      message: flow.successMessage,
+      data: result.data,
+    }
+  }
+
+  return {
+    success: false,
+    message: result.error || `Erro ao executar ${flow.name}`,
   }
 }

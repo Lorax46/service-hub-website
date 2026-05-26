@@ -11,20 +11,20 @@ export default async function ToolsPage() {
   const tools = [
     {
       id: "document-processor",
-      name: "Processador de Documentos",
+      name: "Relatórios e Drift de Dados",
       description:
-        "Envie e processe documentos PDF, Word, Excel e outros formatos. Converta, extraia dados e transforme arquivos.",
+        "Execute flows fixos para criar relatórios, enviar relatórios e gerar drift de dados.",
       icon: FileText,
       color: "bg-primary/10 text-primary",
-      features: ["Conversão de PDF", "Extração de texto", "OCR", "Compressão"],
+      features: ["Criar relatórios", "Enviar relatórios", "Drift de dados", "Retorno n8n"],
     },
     {
       id: "workflow-automation",
       name: "Automação de Workflows",
-      description: "Execute automações personalizadas conectadas ao n8n. Envie dados e receba resultados processados.",
+      description: "Execute automações configuradas no n8n sem expor ou editar URLs de webhook.",
       icon: Zap,
       color: "bg-emerald-500/10 text-emerald-600",
-      features: ["Webhooks n8n", "Processamento assíncrono", "Notificações", "Logs detalhados"],
+      features: ["URLs fixas", "Blocos independentes", "Retorno validado", "Logs detalhados"],
     },
   ]
 

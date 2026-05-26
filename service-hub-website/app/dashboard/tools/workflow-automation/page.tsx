@@ -13,7 +13,9 @@ export default async function WorkflowAutomationPage() {
         <div className="mx-auto max-w-3xl">
           <div className="mb-8">
             <h1 className="font-bold text-3xl text-balance">Automação de Workflows</h1>
-            <p className="mt-2 text-muted-foreground text-pretty">Execute workflows personalizados através do n8n</p>
+            <p className="mt-2 text-muted-foreground text-pretty">
+              Execute os flows configurados no n8n sem alterar URLs manualmente.
+            </p>
           </div>
 
           <WorkflowAutomationForm />
