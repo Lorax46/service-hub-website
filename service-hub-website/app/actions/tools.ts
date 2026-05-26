@@ -88,3 +88,75 @@ export async function executeN8nFlowAction(flowId: N8nFlowId) {
     message: result.error || `Erro ao executar ${flow.name}`,
   }
 }
+
+const readOnlySqlPattern = /^(select|with|show|describe|explain)\b/i
+const blockedSqlPattern =
+  /\b(alter|attach|call|copy|create|delete|detach|drop|execute|grant|insert|merge|revoke|truncate|update|vacuum)\b/i
+
+function validateReadOnlySql(sql: string) {
+  const normalizedSql = sql.trim()
+
+  if (!normalizedSql) {
+    return "Informe uma consulta SQL."
+  }
+
+  if (!readOnlySqlPattern.test(normalizedSql)) {
+    return "A consulta deve ser somente leitura e iniciar com SELECT, WITH, SHOW, DESCRIBE ou EXPLAIN."
+  }
+
+  if (blockedSqlPattern.test(normalizedSql)) {
+    return "A consulta contém comandos bloqueados para execução segura."
+  }
+
+  if (normalizedSql.replace(/;$/, "").includes(";")) {
+    return "Execute apenas uma consulta por vez."
+  }
+
+  return null
+}
+
+export async function executeQueryAction(flowId: N8nFlowId, sql: string) {
+  await requireAuth()
+
+  const flow = getN8nFlow(flowId)
+
+  if (!flow) {
+    return { success: false, message: "Flow n8n não encontrado" }
+  }
+
+  if (!flow.id.toLowerCase().includes("steampipe") && !flow.id.toLowerCase().includes("tailpipe")) {
+    return { success: false, message: "Flow inválido para execução de query" }
+  }
+
+  const validationError = validateReadOnlySql(sql)
+
+  if (validationError) {
+    return { success: false, message: validationError }
+  }
+
+  const result = await sendToWebhook(
+    {
+      id: flow.id,
+      name: flow.name,
+      url: flow.url,
+    },
+    {
+      flowId: flow.id,
+      sql: sql.trim(),
+      requestedAt: new Date().toISOString(),
+    },
+  )
+
+  if (result.success) {
+    return {
+      success: true,
+      message: flow.successMessage,
+      data: result.data,
+    }
+  }
+
+  return {
+    success: false,
+    message: result.error || `Erro ao executar ${flow.name}`,
+  }
+}

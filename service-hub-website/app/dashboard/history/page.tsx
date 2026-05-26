@@ -87,22 +87,22 @@ export default async function HistoryPage() {
     <div className="min-h-screen bg-background">
       <Navbar user={user} />
 
-      <main className="container py-8">
-        <div className="mb-8">
+      <main className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto mb-8 max-w-6xl">
           <h1 className="font-bold text-3xl">Histórico</h1>
           <p className="mt-2 text-muted-foreground">Acompanhe todos os processamentos realizados</p>
         </div>
 
-        <Card>
+        <Card className="mx-auto max-w-6xl overflow-hidden">
           <div className="divide-y">
             {history.map((item) => (
               <div key={item.id} className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
                       <FileText className="h-6 w-6 text-muted-foreground" />
                     </div>
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                       <h3 className="font-semibold">{item.fileName}</h3>
                       <p className="mt-1 text-muted-foreground text-sm">
                         {item.fileSize.toFixed(1)} MB • {item.webhook}
@@ -116,7 +116,7 @@ export default async function HistoryPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     {getStatusIcon(item.status)}
                     <span className="text-sm">{getStatusText(item.status)}</span>
                   </div>

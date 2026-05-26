@@ -75,20 +75,20 @@ export function DocumentProcessorForm() {
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="mx-auto grid w-full max-w-3xl gap-4">
       {flowBlocks.map((flow) => {
         const Icon = flow.icon
         const result = results[flow.id]
         const isLoading = loadingFlow === flow.id
 
         return (
-          <Card key={flow.id} className="gap-4 p-6">
+          <Card key={flow.id} className="w-full min-w-0 gap-4 overflow-hidden p-4 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="flex gap-4">
+              <div className="flex min-w-0 gap-4">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Icon className="h-5 w-5" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h2 className="font-semibold text-lg">{flow.title}</h2>
                   <p className="mt-1 text-muted-foreground text-sm text-pretty">{flow.description}</p>
                 </div>
@@ -129,7 +129,7 @@ export function DocumentProcessorForm() {
                 </div>
 
                 {result.data !== undefined && result.data !== null && (
-                  <pre className="mt-3 max-h-72 overflow-auto rounded bg-background/50 p-3 font-mono text-xs">
+                  <pre className="mt-3 max-h-72 max-w-full overflow-auto rounded bg-background/50 p-3 font-mono text-xs">
                     {JSON.stringify(result.data, null, 2)}
                   </pre>
                 )}

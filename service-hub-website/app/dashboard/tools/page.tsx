@@ -2,7 +2,7 @@ import { requireAuth } from "@/lib/auth"
 import { Navbar } from "@/components/navbar"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, Zap, ArrowRight } from "lucide-react"
+import { Database, FileText, Zap, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 export default async function ToolsPage() {
@@ -11,6 +11,7 @@ export default async function ToolsPage() {
   const tools = [
     {
       id: "document-processor",
+      href: "/dashboard/tools/document-processor",
       name: "Relatórios e Drift de Dados",
       description:
         "Execute flows fixos para criar relatórios, enviar relatórios e gerar drift de dados.",
@@ -20,11 +21,21 @@ export default async function ToolsPage() {
     },
     {
       id: "workflow-automation",
+      href: "/dashboard/tools/workflow-automation",
       name: "Automação de Workflows",
       description: "Execute automações configuradas no n8n sem expor ou editar URLs de webhook.",
       icon: Zap,
       color: "bg-emerald-500/10 text-emerald-600",
       features: ["URLs fixas", "Blocos independentes", "Retorno validado", "Logs detalhados"],
+    },
+    {
+      id: "queries",
+      href: "/dashboard/queries",
+      name: "Queries",
+      description: "Execute consultas SQL de leitura em Steampipe e Tailpipe enviadas para flows fixos no n8n.",
+      icon: Database,
+      color: "bg-blue-500/10 text-blue-600",
+      features: ["SQL read-only", "Steampipe", "Tailpipe", "Retorno n8n"],
     },
   ]
 
@@ -32,15 +43,15 @@ export default async function ToolsPage() {
     <div className="min-h-screen bg-background">
       <Navbar user={user} />
 
-      <main className="container py-8">
-        <div className="mb-8">
+      <main className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto mb-8 max-w-3xl text-center">
           <h1 className="font-bold text-3xl text-balance">Ferramentas</h1>
           <p className="mt-2 text-muted-foreground text-pretty">Selecione uma ferramenta para começar a processar</p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-2 xl:grid-cols-3">
           {tools.map((tool) => (
-            <Card key={tool.id} className="p-6">
+            <Card key={tool.id} className="min-w-0 p-4 sm:p-6">
               <div className="mb-4 flex items-start justify-between">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${tool.color}`}>
                   <tool.icon className="h-6 w-6" />
@@ -59,7 +70,7 @@ export default async function ToolsPage() {
               </div>
 
               <Button asChild className="w-full">
-                <Link href={`/dashboard/tools/${tool.id}`}>
+                <Link href={tool.href}>
                   Usar ferramenta <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>

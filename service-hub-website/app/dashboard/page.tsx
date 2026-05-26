@@ -2,7 +2,7 @@ import { requireAuth } from "@/lib/auth"
 import { Navbar } from "@/components/navbar"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, Zap, Clock, Activity, ArrowRight } from "lucide-react"
+import { FileText, Zap, Clock, Activity, ArrowRight, Database } from "lucide-react"
 import Link from "next/link"
 
 export default async function DashboardPage() {
@@ -12,15 +12,15 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-background">
       <Navbar user={user} />
 
-      <main className="container py-8">
-        <div className="mb-8 space-y-2">
+      <main className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto mb-8 max-w-6xl space-y-2">
           <h1 className="font-bold text-3xl text-balance">Bem-vindo, {user.name}</h1>
           <p className="text-muted-foreground text-pretty">
             Gerencie suas automações e processe arquivos com facilidade
           </p>
         </div>
 
-        <div className="mb-8 grid gap-4 md:grid-cols-4">
+        <div className="mx-auto mb-8 grid max-w-6xl gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -70,7 +70,7 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-2">
           <Card className="p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-semibold text-xl">Ferramentas Disponíveis</h2>
@@ -104,6 +104,20 @@ export default async function DashboardPage() {
                     <div className="flex-1">
                       <h3 className="font-semibold">Automação de Workflows</h3>
                       <p className="text-muted-foreground text-sm">Execute automações personalizadas via n8n</p>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+
+              <Link href="/dashboard/queries">
+                <Card className="p-4 transition-colors hover:bg-muted/50">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                      <Database className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold">Queries</h3>
+                      <p className="text-muted-foreground text-sm">Execute consultas Steampipe e Tailpipe por flows fixos no n8n</p>
                     </div>
                   </div>
                 </Card>

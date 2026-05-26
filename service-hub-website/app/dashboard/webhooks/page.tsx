@@ -36,23 +36,23 @@ export default async function WebhooksPage() {
     <div className="min-h-screen bg-background">
       <Navbar user={user} />
 
-      <main className="container py-8">
-        <div className="mb-8 flex items-center justify-between">
+      <main className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto mb-8 flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-bold text-3xl">Webhooks</h1>
             <p className="mt-2 text-muted-foreground">Gerencie suas integrações com n8n</p>
           </div>
-          <Button>
+          <Button className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Novo Webhook
           </Button>
         </div>
 
-        <div className="grid gap-4">
+        <div className="mx-auto grid max-w-6xl gap-4">
           {webhooks.map((webhook) => (
-            <Card key={webhook.id} className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
+            <Card key={webhook.id} className="min-w-0 overflow-hidden p-4 sm:p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="min-w-0 flex-1">
                   <div className="mb-2 flex items-center gap-3">
                     <h3 className="font-semibold text-lg">{webhook.name}</h3>
                     <span
@@ -67,14 +67,14 @@ export default async function WebhooksPage() {
                     </span>
                   </div>
                   <p className="mb-3 text-muted-foreground text-sm">{webhook.description}</p>
-                  <div className="flex items-center gap-2 font-mono text-sm">
-                    <code className="rounded bg-muted px-2 py-1">{webhook.url}</code>
+                  <div className="flex min-w-0 items-center gap-2 font-mono text-sm">
+                    <code className="min-w-0 overflow-auto rounded bg-muted px-2 py-1">{webhook.url}</code>
                     <Button variant="ghost" size="icon" className="h-7 w-7">
                       <ExternalLink className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 sm:justify-end">
                   <Button variant="outline" size="sm">
                     Editar
                   </Button>

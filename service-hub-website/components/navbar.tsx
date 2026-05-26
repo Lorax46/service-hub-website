@@ -14,7 +14,7 @@ interface NavbarProps {
 export function Navbar({ user }: NavbarProps) {
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -41,6 +41,12 @@ export function Navbar({ user }: NavbarProps) {
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Histórico
+            </Link>
+            <Link
+              href="/dashboard/queries"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Queries
             </Link>
             <Link
               href="/dashboard/webhooks"

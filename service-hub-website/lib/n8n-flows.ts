@@ -17,6 +17,24 @@ export const n8nFlows = {
     url: "urln8n://depois-eu-altero/gerar-drift-de-dados",
     successMessage: "Flow de drift de dados executado. Resultado disponibilizado pelo n8n.",
   },
+  steampipeQuery: {
+    id: "steampipeQuery",
+    name: "Steampipe query",
+    url: "urln8n://depois-eu-altero/steampipe-query",
+    successMessage: "Consulta enviada ao Steampipe pelo n8n.",
+  },
+  steampipeUpdateDatabase: {
+    id: "steampipeUpdateDatabase",
+    name: "Update database Steampipe",
+    url: "urln8n://depois-eu-altero/steampipe-update-database",
+    successMessage: "Atualização do database Steampipe iniciada pelo n8n.",
+  },
+  tailpipeQuery: {
+    id: "tailpipeQuery",
+    name: "Tailpipe query",
+    url: "urln8n://depois-eu-altero/tailpipe-query",
+    successMessage: "Consulta enviada ao Tailpipe pelo n8n.",
+  },
 } as const
 
 export type N8nFlowId = keyof typeof n8nFlows
