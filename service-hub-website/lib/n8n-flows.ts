@@ -14,7 +14,7 @@ export const n8nFlows = {
   generateDataDrift: {
     id: "generateDataDrift",
     name: "Gerar drift de dados",
-    url: "urln8n://depois-eu-altero/gerar-drift-de-dados",
+    url: "https://n8n.tail503e8e.ts.net/webhook/a9cfc4d5-7771-462d-b09f-ad40849f0ff1",
     successMessage: "Flow de drift de dados executado. Resultado disponibilizado pelo n8n.",
   },
   steampipeQuery: {

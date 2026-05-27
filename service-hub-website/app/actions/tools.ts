@@ -54,8 +54,8 @@ export async function executeWorkflowAction(webhookUrl: string, payload: any) {
   }
 }
 
-export async function executeN8nFlowAction(flowId: N8nFlowId) {
-  await requireAuth()
+export async function executeN8nFlowAction(flowId: N8nFlowId, payload: Record<string, unknown> = {}) {
+  const user = await requireAuth()
 
   const flow = getN8nFlow(flowId)
 
@@ -71,6 +71,15 @@ export async function executeN8nFlowAction(flowId: N8nFlowId) {
     },
     {
       flowId: flow.id,
+      ...payload,
+      ...(flow.id === "generateDataDrift" && {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+        userEmail: user.email,
+      }),
       requestedAt: new Date().toISOString(),
     },
   )
@@ -86,6 +95,44 @@ export async function executeN8nFlowAction(flowId: N8nFlowId) {
   return {
     success: false,
     message: result.error || `Erro ao executar ${flow.name}`,
+  }
+}
+
+export async function shareDataDriftFileAction(payload: Record<string, unknown> = {}) {
+  const user = await requireAuth()
+  const flow = getN8nFlow("generateDataDrift")
+
+  if (!flow) {
+    return { success: false, message: "Flow n8n não encontrado" }
+  }
+
+  const result = await sendToWebhook(
+    {
+      id: flow.id,
+      name: flow.name,
+      url: flow.url,
+    },
+    {
+      flowId: flow.id,
+      action: "shareGoogleSheet",
+      ...payload,
+      email: user.email,
+      userEmail: user.email,
+      requestedAt: new Date().toISOString(),
+    },
+  )
+
+  if (result.success) {
+    return {
+      success: true,
+      message: `Arquivo solicitado. O n8n deve compartilhar a planilha com ${user.email}.`,
+      data: result.data,
+    }
+  }
+
+  return {
+    success: false,
+    message: result.error || `Erro ao solicitar arquivo em ${flow.name}`,
   }
 }
 

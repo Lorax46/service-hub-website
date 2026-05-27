@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { AlertCircle, BarChart3, CheckCircle2, FileCheck2, Loader2, Send } from "lucide-react"
+import { AlertCircle, BarChart3, CheckCircle2, Download, FileCheck2, Loader2, Send } from "lucide-react"
 
-import { executeN8nFlowAction } from "@/app/actions/tools"
+import { executeN8nFlowAction, shareDataDriftFileAction } from "@/app/actions/tools"
 import type { N8nFlowId } from "@/lib/n8n-flows"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 
 type FlowResult = {
   success: boolean
@@ -21,6 +22,18 @@ type FlowBlock = {
   actionLabel: string
   loadingLabel: string
   icon: typeof FileCheck2
+}
+
+type DriftMode = "monthly" | "periodic" | "point"
+
+type DriftConfig = {
+  mode: DriftMode
+  startYear: string
+  startMonth: string
+  endYear: string
+  endMonth: string
+  oldUrl: string
+  newUrl: string
 }
 
 const flowBlocks: FlowBlock[] = [
@@ -50,16 +63,94 @@ const flowBlocks: FlowBlock[] = [
   },
 ]
 
+const driftModeOptions: Array<{
+  id: DriftMode
+  label: string
+}> = [
+  { id: "monthly", label: "Drift mensal" },
+  { id: "periodic", label: "Drift periódico" },
+  { id: "point", label: "Drift pontual" },
+]
+
+const initialDriftConfig: DriftConfig = {
+  mode: "monthly",
+  startYear: "",
+  startMonth: "",
+  endYear: "",
+  endMonth: "",
+  oldUrl: "",
+  newUrl: "",
+}
+
 export function DocumentProcessorForm() {
   const [loadingFlow, setLoadingFlow] = useState<N8nFlowId | null>(null)
+  const [sharingDriftFile, setSharingDriftFile] = useState(false)
   const [results, setResults] = useState<Partial<Record<N8nFlowId, FlowResult>>>({})
+  const [driftConfig, setDriftConfig] = useState<DriftConfig>(initialDriftConfig)
+
+  const updateDriftConfig = (updates: Partial<DriftConfig>) => {
+    setDriftConfig((currentConfig) => ({ ...currentConfig, ...updates }))
+  }
+
+  const getDriftPayload = () => {
+    if (driftConfig.mode === "monthly") {
+      return {
+        driftType: "monthly",
+      }
+    }
+
+    if (driftConfig.mode === "periodic") {
+      return {
+        driftType: "periodic",
+        startYear: driftConfig.startYear,
+        startMonth: driftConfig.startMonth,
+        endYear: driftConfig.endYear,
+        endMonth: driftConfig.endMonth,
+      }
+    }
+
+    return {
+      driftType: "point",
+      oldUrl: driftConfig.oldUrl,
+      newUrl: driftConfig.newUrl,
+    }
+  }
+
+  const validateDriftConfig = () => {
+    if (driftConfig.mode === "periodic") {
+      if (!driftConfig.startYear || !driftConfig.startMonth || !driftConfig.endYear || !driftConfig.endMonth) {
+        return "Preencha ano e mês inicial e final para o drift periódico."
+      }
+    }
+
+    if (driftConfig.mode === "point") {
+      if (!driftConfig.oldUrl || !driftConfig.newUrl) {
+        return "Preencha a URL antiga e a URL nova para o drift pontual."
+      }
+    }
+
+    return null
+  }
 
   const handleRunFlow = async (flowId: N8nFlowId) => {
+    const driftValidationError = flowId === "generateDataDrift" ? validateDriftConfig() : null
+
+    if (driftValidationError) {
+      setResults((currentResults) => ({
+        ...currentResults,
+        [flowId]: {
+          success: false,
+          message: driftValidationError,
+        },
+      }))
+      return
+    }
+
     setLoadingFlow(flowId)
     setResults((currentResults) => ({ ...currentResults, [flowId]: undefined }))
 
     try {
-      const response = await executeN8nFlowAction(flowId)
+      const response = await executeN8nFlowAction(flowId, flowId === "generateDataDrift" ? getDriftPayload() : {})
       setResults((currentResults) => ({ ...currentResults, [flowId]: response }))
     } catch (error) {
       setResults((currentResults) => ({
@@ -74,12 +165,46 @@ export function DocumentProcessorForm() {
     }
   }
 
+  const handleShareDriftFile = async () => {
+    const driftValidationError = validateDriftConfig()
+
+    if (driftValidationError) {
+      setResults((currentResults) => ({
+        ...currentResults,
+        generateDataDrift: {
+          success: false,
+          message: driftValidationError,
+        },
+      }))
+      return
+    }
+
+    setSharingDriftFile(true)
+
+    try {
+      const response = await shareDataDriftFileAction(getDriftPayload())
+      setResults((currentResults) => ({ ...currentResults, generateDataDrift: response }))
+    } catch (error) {
+      setResults((currentResults) => ({
+        ...currentResults,
+        generateDataDrift: {
+          success: false,
+          message: error instanceof Error ? error.message : "Erro ao solicitar arquivo",
+        },
+      }))
+    } finally {
+      setSharingDriftFile(false)
+    }
+  }
+
   return (
     <div className="mx-auto grid w-full max-w-3xl gap-4">
       {flowBlocks.map((flow) => {
         const Icon = flow.icon
         const result = results[flow.id]
         const isLoading = loadingFlow === flow.id
+        const canShareDriftFile = flow.id === "generateDataDrift" && result?.success
+        const isDataDrift = flow.id === "generateDataDrift"
 
         return (
           <Card key={flow.id} className="w-full min-w-0 gap-4 overflow-hidden p-4 sm:p-6">
@@ -111,6 +236,84 @@ export function DocumentProcessorForm() {
               </Button>
             </div>
 
+            {isDataDrift && (
+              <div className="grid gap-4 rounded-lg border bg-muted/30 p-4">
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {driftModeOptions.map((option) => {
+                    const isSelected = driftConfig.mode === option.id
+
+                    return (
+                      <Button
+                        key={option.id}
+                        type="button"
+                        variant={isSelected ? "default" : "outline"}
+                        className="justify-start"
+                        disabled={loadingFlow !== null || sharingDriftFile}
+                        onClick={() => updateDriftConfig({ mode: option.id })}
+                      >
+                        <CheckCircle2 className={`mr-2 h-4 w-4 ${isSelected ? "opacity-100" : "opacity-30"}`} />
+                        {option.label}
+                      </Button>
+                    )
+                  })}
+                </div>
+
+                {driftConfig.mode === "periodic" && (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="Ano inicial"
+                      value={driftConfig.startYear}
+                      onChange={(event) => updateDriftConfig({ startYear: event.target.value })}
+                    />
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min="1"
+                      max="12"
+                      placeholder="Mês inicial"
+                      value={driftConfig.startMonth}
+                      onChange={(event) => updateDriftConfig({ startMonth: event.target.value })}
+                    />
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="Ano final"
+                      value={driftConfig.endYear}
+                      onChange={(event) => updateDriftConfig({ endYear: event.target.value })}
+                    />
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min="1"
+                      max="12"
+                      placeholder="Mês final"
+                      value={driftConfig.endMonth}
+                      onChange={(event) => updateDriftConfig({ endMonth: event.target.value })}
+                    />
+                  </div>
+                )}
+
+                {driftConfig.mode === "point" && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Input
+                      type="url"
+                      placeholder="URL antiga"
+                      value={driftConfig.oldUrl}
+                      onChange={(event) => updateDriftConfig({ oldUrl: event.target.value })}
+                    />
+                    <Input
+                      type="url"
+                      placeholder="URL nova"
+                      value={driftConfig.newUrl}
+                      onChange={(event) => updateDriftConfig({ newUrl: event.target.value })}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             {result && (
               <div
                 className={`rounded-lg border p-4 ${
@@ -133,6 +336,8 @@ export function DocumentProcessorForm() {
                     {JSON.stringify(result.data, null, 2)}
                   </pre>
                 )}
+
+              
               </div>
             )}
           </Card>
