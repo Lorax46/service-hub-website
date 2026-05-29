@@ -1,11 +1,50 @@
 "use server"
 
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, type User } from "@/lib/auth"
+import { appendHistoryEntry } from "@/lib/history"
 import { getN8nFlow, type N8nFlowId } from "@/lib/n8n-flows"
 import { sendToWebhook } from "@/lib/webhook-client"
 
+function getLoggedUserPayload(user: User) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+  }
+}
+
+function withLoggedUserPayload(payload: Record<string, unknown>, user: User) {
+  const loggedUser = getLoggedUserPayload(user)
+
+  return {
+    ...payload,
+    user: loggedUser,
+    userId: loggedUser.id,
+    userName: loggedUser.name,
+    userEmail: loggedUser.email,
+  }
+}
+
+function appendLoggedUserToFormData(formData: FormData, user: User) {
+  const loggedUser = getLoggedUserPayload(user)
+
+  formData.set("user", JSON.stringify(loggedUser))
+  formData.set("userId", loggedUser.id)
+  formData.set("userName", loggedUser.name)
+  formData.set("userEmail", loggedUser.email)
+}
+
+function createDownloadFilename(base: string) {
+  return `${base
+    .trim()
+    .replace(/[^a-zA-Z0-9-_\.]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 80)}-${Date.now()}.json`
+}
+
 export async function processDocumentAction(formData: FormData) {
-  await requireAuth()
+  const user = await requireAuth()
 
   const file = formData.get("file") as File
   const webhookUrl = formData.get("webhookUrl") as string
@@ -14,8 +53,26 @@ export async function processDocumentAction(formData: FormData) {
     return { success: false, message: "Arquivo e URL do webhook são obrigatórios" }
   }
 
+  appendLoggedUserToFormData(formData, user)
+
   // Send file to n8n webhook
   const result = await sendToWebhook({ id: "doc-processor", name: "Document Processor", url: webhookUrl }, formData)
+
+  await appendHistoryEntry({
+    userId: user.id,
+    type: "document",
+    title: `Processamento de ${file.name}`,
+    description: "Documento enviado ao n8n",
+    webhook: "Document Processor",
+    request: {
+      fileName: file.name,
+      webhookUrl,
+    },
+    responseSummary: result.data ?? { error: result.error },
+    status: result.success ? "completed" : "failed",
+    error: result.success ? undefined : result.error,
+    downloadFilename: createDownloadFilename(`document-${file.name}`),
+  })
 
   if (result.success) {
     return {
@@ -32,13 +89,29 @@ export async function processDocumentAction(formData: FormData) {
 }
 
 export async function executeWorkflowAction(webhookUrl: string, payload: any) {
-  await requireAuth()
+  const user = await requireAuth()
 
   if (!webhookUrl) {
     return { success: false, message: "URL do webhook é obrigatória" }
   }
 
-  const result = await sendToWebhook({ id: "workflow", name: "Workflow Automation", url: webhookUrl }, payload)
+  const result = await sendToWebhook(
+    { id: "workflow", name: "Workflow Automation", url: webhookUrl },
+    withLoggedUserPayload(payload || {}, user),
+  )
+
+  await appendHistoryEntry({
+    userId: user.id,
+    type: "workflow",
+    title: "Workflow Automation",
+    description: "Execução de workflow genérico",
+    webhook: "Workflow Automation",
+    request: payload || {},
+    responseSummary: result.data ?? { error: result.error },
+    status: result.success ? "completed" : "failed",
+    error: result.success ? undefined : result.error,
+    downloadFilename: createDownloadFilename("workflow-automation"),
+  })
 
   if (result.success) {
     return {
@@ -69,20 +142,32 @@ export async function executeN8nFlowAction(flowId: N8nFlowId, payload: Record<st
       name: flow.name,
       url: flow.url,
     },
-    {
-      flowId: flow.id,
-      ...payload,
-      ...(flow.id === "generateDataDrift" && {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        },
-        userEmail: user.email,
-      }),
-      requestedAt: new Date().toISOString(),
-    },
+    withLoggedUserPayload(
+      {
+        flowId: flow.id,
+        ...payload,
+        requestedAt: new Date().toISOString(),
+      },
+      user,
+    ),
   )
+
+  await appendHistoryEntry({
+    userId: user.id,
+    type: flow.id.toLowerCase().includes("query") ? "query" : "workflow",
+    title: flow.name,
+    description: `Execução de fluxo n8n ${flow.name}`,
+    webhook: flow.name,
+    flowId: flow.id,
+    request: {
+      ...payload,
+      flowId: flow.id,
+    },
+    responseSummary: result.data ?? { error: result.error },
+    status: result.success ? "completed" : "failed",
+    error: result.success ? undefined : result.error,
+    downloadFilename: createDownloadFilename(flow.id),
+  })
 
   if (result.success) {
     return {
@@ -96,6 +181,22 @@ export async function executeN8nFlowAction(flowId: N8nFlowId, payload: Record<st
     success: false,
     message: result.error || `Erro ao executar ${flow.name}`,
   }
+}
+
+export async function requestSendReportsAuthorizationAction() {
+  return executeN8nFlowAction("sendReports", {
+    action: "requestAuthorization",
+    step: "review",
+  })
+}
+
+export async function confirmSendReportsAction(payload: Record<string, unknown> = {}) {
+  return executeN8nFlowAction("sendReports", {
+    action: "confirmPayload",
+    step: "confirm",
+    approved: true,
+    ...payload,
+  })
 }
 
 export async function shareDataDriftFileAction(payload: Record<string, unknown> = {}) {
@@ -112,23 +213,62 @@ export async function shareDataDriftFileAction(payload: Record<string, unknown> 
       name: flow.name,
       url: flow.url,
     },
-    {
-      flowId: flow.id,
-      action: "shareGoogleSheet",
-      ...payload,
-      email: user.email,
-      userEmail: user.email,
-      requestedAt: new Date().toISOString(),
-    },
+    withLoggedUserPayload(
+      {
+        flowId: flow.id,
+        action: "shareGoogleSheet",
+        ...payload,
+        email: user.email,
+        requestedAt: new Date().toISOString(),
+      },
+      user,
+    ),
   )
 
   if (result.success) {
+    await appendHistoryEntry({
+      userId: user.id,
+      type: "workflow",
+      title: flow.name,
+      description: "Solicitação de arquivo via n8n",
+      webhook: flow.name,
+      flowId: flow.id,
+      request: {
+        flowId: flow.id,
+        action: "shareGoogleSheet",
+        email: user.email,
+        ...payload,
+      },
+      responseSummary: result.data ?? { error: result.error },
+      status: result.success ? "completed" : "failed",
+      downloadFilename: createDownloadFilename(flow.id),
+    })
+
     return {
       success: true,
       message: `Arquivo solicitado. O n8n deve compartilhar a planilha com ${user.email}.`,
       data: result.data,
     }
   }
+
+  await appendHistoryEntry({
+    userId: user.id,
+    type: "workflow",
+    title: flow.name,
+    description: "Solicitação de arquivo via n8n",
+    webhook: flow.name,
+    flowId: flow.id,
+    request: {
+      flowId: flow.id,
+      action: "shareGoogleSheet",
+      email: user.email,
+      ...payload,
+    },
+    responseSummary: { error: result.error },
+    status: "failed",
+    error: result.error,
+    downloadFilename: createDownloadFilename(flow.id),
+  })
 
   return {
     success: false,
@@ -163,7 +303,7 @@ function validateReadOnlySql(sql: string) {
 }
 
 export async function executeQueryAction(flowId: N8nFlowId, sql: string) {
-  await requireAuth()
+  const user = await requireAuth()
 
   const flow = getN8nFlow(flowId)
 
@@ -187,12 +327,32 @@ export async function executeQueryAction(flowId: N8nFlowId, sql: string) {
       name: flow.name,
       url: flow.url,
     },
-    {
+    withLoggedUserPayload(
+      {
+        flowId: flow.id,
+        sql: sql.trim(),
+        requestedAt: new Date().toISOString(),
+      },
+      user,
+    ),
+  )
+
+  await appendHistoryEntry({
+    userId: user.id,
+    type: "query",
+    title: flow.name,
+    description: "Consulta SQL executada via n8n",
+    webhook: flow.name,
+    flowId: flow.id,
+    request: {
       flowId: flow.id,
       sql: sql.trim(),
-      requestedAt: new Date().toISOString(),
     },
-  )
+    responseSummary: result.data ?? { error: result.error },
+    status: result.success ? "completed" : "failed",
+    error: result.success ? undefined : result.error,
+    downloadFilename: createDownloadFilename(`${flow.id}-query`),
+  })
 
   if (result.success) {
     return {

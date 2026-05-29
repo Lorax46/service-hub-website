@@ -35,7 +35,7 @@ const queryTools: QueryTool[] = [
     description: "Execute consultas SQL de leitura no Steampipe.",
     icon: Database,
     updateFlowId: "steampipeUpdateDatabase",
-    defaultSql: "select name, region, account_id\nfrom aws_s3_bucket\nlimit 25;",
+    defaultSql: "",
     presets: [
       {
         label: "Buckets",

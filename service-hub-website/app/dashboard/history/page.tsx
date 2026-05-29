@@ -1,49 +1,12 @@
 import { requireAuth } from "@/lib/auth"
+import { getHistoryForUser } from "@/lib/history"
 import { Navbar } from "@/components/navbar"
 import { Card } from "@/components/ui/card"
-import { FileText, CheckCircle2, Loader2, XCircle } from "lucide-react"
+import { FileText, CheckCircle2, Loader2, XCircle, Download } from "lucide-react"
 
 export default async function HistoryPage() {
   const user = await requireAuth()
-
-  // Demo history - in production, fetch from database
-  const history = [
-    {
-      id: "1",
-      fileName: "relatorio-mensal.pdf",
-      fileSize: 2.4,
-      webhook: "PDF Converter",
-      status: "completed",
-      createdAt: new Date(Date.now() - 300000),
-      completedAt: new Date(Date.now() - 290000),
-    },
-    {
-      id: "2",
-      fileName: "dados-clientes.xlsx",
-      fileSize: 1.8,
-      webhook: "Data Processor",
-      status: "completed",
-      createdAt: new Date(Date.now() - 900000),
-      completedAt: new Date(Date.now() - 870000),
-    },
-    {
-      id: "3",
-      fileName: "documento-importante.docx",
-      fileSize: 0.9,
-      webhook: "PDF Converter",
-      status: "processing",
-      createdAt: new Date(Date.now() - 60000),
-    },
-    {
-      id: "4",
-      fileName: "planilha-quebrada.csv",
-      fileSize: 5.2,
-      webhook: "Data Processor",
-      status: "failed",
-      createdAt: new Date(Date.now() - 3600000),
-      error: "Formato de arquivo inválido",
-    },
-  ]
+  const history = await getHistoryForUser(user.id)
 
   const formatDate = (date: Date) => {
     const now = Date.now()
@@ -95,34 +58,54 @@ export default async function HistoryPage() {
 
         <Card className="mx-auto max-w-6xl overflow-hidden">
           <div className="divide-y">
-            {history.map((item) => (
-              <div key={item.id} className="p-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex min-w-0 items-start gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-                      <FileText className="h-6 w-6 text-muted-foreground" />
+            {history.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground">
+                Nenhum item de histórico encontrado ainda.
+              </div>
+            ) : (
+              history.map((item) => (
+                <div key={item.id} className="p-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex min-w-0 items-start gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
+                        <FileText className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full border px-2 py-1 text-xs font-medium uppercase tracking-[0.1em] text-slate-500">
+                            {item.type}
+                          </span>
+                          <h3 className="font-semibold">{item.title}</h3>
+                        </div>
+                        <p className="mt-1 text-muted-foreground text-sm">{item.description}</p>
+                        <p className="mt-1 text-muted-foreground text-sm">{item.webhook}</p>
+                        {item.status === "failed" && item.error && (
+                          <p className="mt-1 text-red-600 text-sm">{item.error}</p>
+                        )}
+                        <p className="mt-2 text-muted-foreground text-xs">
+                          Iniciado {formatDate(new Date(item.createdAt))}
+                          {item.completedAt && ` • Concluído ${formatDate(new Date(item.completedAt))}`}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold">{item.fileName}</h3>
-                      <p className="mt-1 text-muted-foreground text-sm">
-                        {item.fileSize.toFixed(1)} MB • {item.webhook}
-                      </p>
-                      {item.status === "failed" && item.error && (
-                        <p className="mt-1 text-red-600 text-sm">{item.error}</p>
-                      )}
-                      <p className="mt-2 text-muted-foreground text-xs">
-                        Iniciado {formatDate(item.createdAt)}
-                        {item.completedAt && ` • Concluído ${formatDate(item.completedAt)}`}
-                      </p>
+
+                    <div className="flex flex-col items-end gap-2 sm:items-end">
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(item.status)}
+                        <span className="text-sm">{getStatusText(item.status)}</span>
+                      </div>
+                      <a
+                        href={`/dashboard/history/${item.id}/download`}
+                        className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-100"
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </a>
                     </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {getStatusIcon(item.status)}
-                    <span className="text-sm">{getStatusText(item.status)}</span>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </Card>
       </main>

@@ -8,7 +8,7 @@ export const n8nFlows = {
   sendReports: {
     id: "sendReports",
     name: "Enviar relatórios",
-    url: "urln8n://depois-eu-altero/enviar-relatorios",
+    url: "https://n8n.tail503e8e.ts.net/webhook/a9cfc4d5-7771-462d-b09f-ad40849f0ff1",
     successMessage: "Flow de envio de relatórios executado. Validação retornada pelo n8n.",
   },
   generateDataDrift: {
@@ -20,13 +20,13 @@ export const n8nFlows = {
   steampipeQuery: {
     id: "steampipeQuery",
     name: "Steampipe query",
-    url: "urln8n://depois-eu-altero/steampipe-query",
+    url: "https://n8n.tail503e8e.ts.net/webhook/a9cfc4d5-7771-462d-b09f-ad40849f0ff1",
     successMessage: "Consulta enviada ao Steampipe pelo n8n.",
   },
   steampipeUpdateDatabase: {
     id: "steampipeUpdateDatabase",
     name: "Update database Steampipe",
-    url: "urln8n://depois-eu-altero/steampipe-update-database",
+    url: "https://n8n.tail503e8e.ts.net/webhook/a9cfc4d5-7771-462d-b09f-ad40849f0ff1",
     successMessage: "Atualização do database Steampipe iniciada pelo n8n.",
   },
   tailpipeQuery: {
