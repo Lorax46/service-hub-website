@@ -1,9 +1,10 @@
-import { requireAuth } from "@/lib/auth"
+import { requirePermission } from "@/lib/auth"
 import { Navbar } from "@/components/navbar"
 import { DocumentProcessorForm } from "@/components/document-processor-form"
+import { permissions } from "@/lib/permissions"
 
 export default async function DocumentProcessorPage() {
-  const user = await requireAuth()
+  const user = await requirePermission(permissions.reportsView)
 
   return (
     <div className="min-h-screen bg-background">

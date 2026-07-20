@@ -3,6 +3,7 @@
 import { requireAuth, type User } from "@/lib/auth"
 import { appendHistoryEntry } from "@/lib/history"
 import { getN8nFlow, type N8nFlowId } from "@/lib/n8n-flows"
+import { flowPermissions, permissions, userHasPermission, type Permission } from "@/lib/permissions"
 import { sendToWebhook } from "@/lib/webhook-client"
 
 function getLoggedUserPayload(user: User) {
@@ -43,8 +44,24 @@ function createDownloadFilename(base: string) {
     .slice(0, 80)}-${Date.now()}.json`
 }
 
+function denyPermission(permission: Permission) {
+  return {
+    success: false,
+    message: `Você não tem permissão para executar ${permission}.`,
+  }
+}
+
+function assertUserPermission(user: User, permission: Permission) {
+  return userHasPermission(user, permission) ? null : denyPermission(permission)
+}
+
 export async function processDocumentAction(formData: FormData) {
   const user = await requireAuth()
+  const permissionError = assertUserPermission(user, permissions.reportsView)
+
+  if (permissionError) {
+    return permissionError
+  }
 
   const file = formData.get("file") as File
   const webhookUrl = formData.get("webhookUrl") as string
@@ -90,6 +107,11 @@ export async function processDocumentAction(formData: FormData) {
 
 export async function executeWorkflowAction(webhookUrl: string, payload: any) {
   const user = await requireAuth()
+  const permissionError = assertUserPermission(user, permissions.workflowAutomation)
+
+  if (permissionError) {
+    return permissionError
+  }
 
   if (!webhookUrl) {
     return { success: false, message: "URL do webhook é obrigatória" }
@@ -127,6 +149,44 @@ export async function executeWorkflowAction(webhookUrl: string, payload: any) {
   }
 }
 
+export async function getActiveWebhooksStatus() {
+  const user = await requireAuth()
+  const permissionError = assertUserPermission(user, permissions.webhooks)
+
+  if (permissionError) {
+    return { success: false, error: permissionError.message }
+  }
+
+  const webhookUrl = process.env.N8N_ACTIVE_WEBHOOKS_URL || "https://n8n.example.com/webhook/active-webhooks-status"
+
+  if (!webhookUrl) {
+    return { success: false, error: "Webhook de status não configurado" }
+  }
+
+  const result = await sendToWebhook(
+    { id: "active-webhooks-status", name: "Active Webhooks Status", url: webhookUrl },
+    withLoggedUserPayload(
+      {
+        action: "checkStatus",
+        requestedAt: new Date().toISOString(),
+      },
+      user,
+    ),
+  )
+
+  if (result.success) {
+    return {
+      success: true,
+      data: result.data,
+    }
+  }
+
+  return {
+    success: false,
+    error: result.error || "Erro ao consultar status dos webhooks",
+  }
+}
+
 export async function executeN8nFlowAction(flowId: N8nFlowId, payload: Record<string, unknown> = {}) {
   const user = await requireAuth()
 
@@ -134,6 +194,13 @@ export async function executeN8nFlowAction(flowId: N8nFlowId, payload: Record<st
 
   if (!flow) {
     return { success: false, message: "Flow n8n não encontrado" }
+  }
+
+  const requiredPermission = flowPermissions[flow.id]
+  const permissionError = requiredPermission ? assertUserPermission(user, requiredPermission) : null
+
+  if (permissionError) {
+    return permissionError
   }
 
   const result = await sendToWebhook(
@@ -201,6 +268,12 @@ export async function confirmSendReportsAction(payload: Record<string, unknown> 
 
 export async function shareDataDriftFileAction(payload: Record<string, unknown> = {}) {
   const user = await requireAuth()
+  const permissionError = assertUserPermission(user, permissions.dataDrift)
+
+  if (permissionError) {
+    return permissionError
+  }
+
   const flow = getN8nFlow("generateDataDrift")
 
   if (!flow) {
@@ -304,6 +377,11 @@ function validateReadOnlySql(sql: string) {
 
 export async function executeQueryAction(flowId: N8nFlowId, sql: string) {
   const user = await requireAuth()
+  const permissionError = assertUserPermission(user, permissions.queries)
+
+  if (permissionError) {
+    return permissionError
+  }
 
   const flow = getN8nFlow(flowId)
 

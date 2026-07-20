@@ -1,13 +1,14 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
-import { requireAuth } from "@/lib/auth"
+import { requirePermission } from "@/lib/auth"
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { CreateReportsCloudForm } from "@/components/create-reports-cloud-form"
+import { permissions } from "@/lib/permissions"
 
 export default async function CreateReportsPage() {
-  const user = await requireAuth()
+  const user = await requirePermission(permissions.createReports)
 
   return (
     <div className="min-h-screen bg-background">

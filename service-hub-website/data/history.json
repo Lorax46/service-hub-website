@@ -20,5 +20,50 @@
     "responsePath": "d8c48247-8802-41ee-af46-6d129c63f8d5.json",
     "createdAt": "2026-05-29T16:19:48.075Z",
     "completedAt": "2026-05-29T16:19:48.075Z"
+  },
+  {
+    "userId": "1",
+    "type": "workflow",
+    "title": "Enviar relatórios",
+    "description": "Execução de fluxo n8n Enviar relatórios",
+    "webhook": "Enviar relatórios",
+    "flowId": "sendReports",
+    "request": {
+      "action": "requestAuthorization",
+      "step": "review",
+      "flowId": "sendReports"
+    },
+    "responseSummary": {
+      "error": "fetch failed"
+    },
+    "status": "failed",
+    "error": "fetch failed",
+    "downloadFilename": "sendReports-1780079931815.json",
+    "id": "eb009b6a-bb33-4314-9277-4d42fa05c900",
+    "responsePath": "eb009b6a-bb33-4314-9277-4d42fa05c900.json",
+    "createdAt": "2026-05-29T18:38:51.820Z",
+    "completedAt": "2026-05-29T18:38:51.820Z"
+  },
+  {
+    "userId": "1",
+    "type": "workflow",
+    "title": "Gerar drift de dados",
+    "description": "Execução de fluxo n8n Gerar drift de dados",
+    "webhook": "Gerar drift de dados",
+    "flowId": "generateDataDrift",
+    "request": {
+      "driftType": "monthly",
+      "flowId": "generateDataDrift"
+    },
+    "responseSummary": {
+      "error": "fetch failed"
+    },
+    "status": "failed",
+    "error": "fetch failed",
+    "downloadFilename": "generateDataDrift-1780079942517.json",
+    "id": "5df416d4-ed22-4785-abf0-fbc1e1c0eb72",
+    "responsePath": "5df416d4-ed22-4785-abf0-fbc1e1c0eb72.json",
+    "createdAt": "2026-05-29T18:39:02.521Z",
+    "completedAt": "2026-05-29T18:39:02.521Z"
   }
 ]

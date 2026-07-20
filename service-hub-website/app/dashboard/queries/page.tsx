@@ -1,9 +1,10 @@
-import { requireAuth } from "@/lib/auth"
+import { requirePermission } from "@/lib/auth"
 import { Navbar } from "@/components/navbar"
 import { QueryRunnerForm } from "@/components/query-runner-form"
+import { permissions } from "@/lib/permissions"
 
 export default async function QueriesPage() {
-  const user = await requireAuth()
+  const user = await requirePermission(permissions.queries)
 
   return (
     <div className="min-h-screen bg-background">

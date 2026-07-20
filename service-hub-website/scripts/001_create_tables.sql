@@ -1,40 +1,35 @@
--- Users table
+-- Tabela de usuarios (Postgres)
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   name TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  groups TEXT[] NOT NULL DEFAULT '{}',
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Webhooks configuration table
-CREATE TABLE IF NOT EXISTS webhooks (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  description TEXT,
-  webhook_url TEXT NOT NULL,
-  method TEXT DEFAULT 'POST',
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
+CREATE INDEX IF NOT EXISTS idx_users_active ON users (is_active);
 
--- Processing history table
 CREATE TABLE IF NOT EXISTS processing_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  webhook_id UUID REFERENCES webhooks(id) ON DELETE SET NULL,
-  file_name TEXT,
-  file_size INTEGER,
-  status TEXT NOT NULL, -- 'pending', 'processing', 'completed', 'failed'
-  response_data JSONB,
+  type TEXT,
+  title TEXT,
+  description TEXT,
+  webhook TEXT,
+  flow_id TEXT,
+  request JSONB,
+  response_summary JSONB,
+  response_path TEXT,
+  status TEXT NOT NULL,
   error_message TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  completed_at TIMESTAMP WITH TIME ZONE
+  download_filename TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at TIMESTAMPTZ
 );
 
--- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_webhooks_user_id ON webhooks(user_id);
-CREATE INDEX IF NOT EXISTS idx_processing_history_user_id ON processing_history(user_id);
-CREATE INDEX IF NOT EXISTS idx_processing_history_status ON processing_history(status);
+CREATE INDEX IF NOT EXISTS idx_history_user_id ON processing_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_history_status ON processing_history(status);

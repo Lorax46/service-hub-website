@@ -265,9 +265,10 @@ export function DocumentProcessorForm() {
         flowId === "sendReports"
           ? await requestSendReportsAuthorizationAction()
           : await executeN8nFlowAction(flowId, flowId === "generateDataDrift" ? getDriftPayload() : {})
+      const responseData = "data" in response ? response.data : undefined
 
       if (flowId === "sendReports") {
-        setSendReportsReview(response.success ? extractSendReportsReview(response.data) : null)
+        setSendReportsReview(response.success ? extractSendReportsReview(responseData) : null)
       }
 
       setResults((currentResults) => ({ ...currentResults, [flowId]: response }))

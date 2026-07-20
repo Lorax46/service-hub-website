@@ -3,15 +3,23 @@ import { Button } from "@/components/ui/button"
 import { LogOut, Menu } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { logoutAction } from "@/app/actions/auth"
+import type { User } from "@/lib/auth"
+import { permissions, userHasPermission } from "@/lib/permissions"
 
 interface NavbarProps {
-  user: {
-    name: string
-    email: string
-  }
+  user: User
 }
 
 export function Navbar({ user }: NavbarProps) {
+  const navItems = [
+    { href: "/dashboard", label: "Dashboard", permission: permissions.dashboardView },
+    { href: "/dashboard/tools", label: "Ferramentas", permission: permissions.toolsView },
+    { href: "/dashboard/history", label: "Histórico", permission: permissions.history },
+    { href: "/dashboard/queries", label: "Queries", permission: permissions.queries },
+    { href: "/dashboard/webhooks", label: "Webhooks", permission: permissions.webhooks },
+    { href: "/dashboard/admin/users", label: "Usuários", permission: permissions.manageUsers },
+  ].filter((item) => userHasPermission(user, item.permission))
+
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -24,36 +32,15 @@ export function Navbar({ user }: NavbarProps) {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link
-              href="/dashboard"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/dashboard/tools"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Ferramentas
-            </Link>
-            <Link
-              href="/dashboard/history"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Histórico
-            </Link>
-            <Link
-              href="/dashboard/queries"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Queries
-            </Link>
-            <Link
-              href="/dashboard/webhooks"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Webhooks
-            </Link>
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
         </div>
 
@@ -71,6 +58,7 @@ export function Navbar({ user }: NavbarProps) {
               <div className="flex flex-col gap-1 p-2">
                 <p className="font-medium text-sm">{user.name}</p>
                 <p className="text-muted-foreground text-xs">{user.email}</p>
+                <p className="text-muted-foreground text-xs">{user.groups.join(", ")}</p>
               </div>
               <DropdownMenuItem asChild>
                 <form action={logoutAction}>

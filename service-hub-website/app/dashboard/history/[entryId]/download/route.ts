@@ -1,11 +1,13 @@
 import fs from "fs/promises"
 import path from "path"
-import { requireAuth } from "@/lib/auth"
+import { requirePermission } from "@/lib/auth"
 import { getHistoryEntry } from "@/lib/history"
+import { permissions } from "@/lib/permissions"
 
-export async function GET(_: Request, { params }: { params: { entryId: string } }) {
-  const user = await requireAuth()
-  const entry = await getHistoryEntry(user.id, params.entryId)
+export async function GET(_: Request, { params }: { params: Promise<{ entryId: string }> }) {
+  const user = await requirePermission(permissions.history)
+  const { entryId } = await params
+  const entry = await getHistoryEntry(user.id, entryId)
 
   if (!entry) {
     return new Response(JSON.stringify({ message: "Registro não encontrado" }), {

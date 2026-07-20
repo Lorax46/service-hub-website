@@ -1,17 +1,28 @@
-import { requireAuth } from "@/lib/auth"
+import { requirePermission } from "@/lib/auth"
 import { Navbar } from "@/components/navbar"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Database, FileText, Zap, ArrowRight } from "lucide-react"
 import Link from "next/link"
+import { permissions, userHasPermission, type Permission } from "@/lib/permissions"
 
 export default async function ToolsPage() {
-  const user = await requireAuth()
+  const user = await requirePermission(permissions.toolsView)
 
-  const tools = [
+  const tools: Array<{
+    id: string
+    href: string
+    permission: Permission
+    name: string
+    description: string
+    icon: typeof FileText
+    color: string
+    features: string[]
+  }> = [
     {
       id: "document-processor",
       href: "/dashboard/tools/document-processor",
+      permission: permissions.reportsView,
       name: "Relatórios e Drift de Dados",
       description:
         "Execute flows fixos para criar relatórios, enviar relatórios e gerar drift de dados.",
@@ -22,6 +33,7 @@ export default async function ToolsPage() {
     {
       id: "workflow-automation",
       href: "/dashboard/tools/workflow-automation",
+      permission: permissions.workflowAutomation,
       name: "Automação de Workflows",
       description: "Execute automações configuradas no n8n sem expor ou editar URLs de webhook.",
       icon: Zap,
@@ -31,13 +43,14 @@ export default async function ToolsPage() {
     {
       id: "queries",
       href: "/dashboard/queries",
+      permission: permissions.queries,
       name: "Queries",
       description: "Execute consultas SQL de leitura em Steampipe e Tailpipe enviadas para flows fixos no n8n.",
       icon: Database,
       color: "bg-blue-500/10 text-blue-600",
       features: ["SQL read-only", "Steampipe", "Tailpipe", "Retorno n8n"],
     },
-  ]
+  ].filter((tool) => userHasPermission(user, tool.permission))
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,11 +1,12 @@
-import { requireAuth } from "@/lib/auth"
+import { requirePermission } from "@/lib/auth"
 import { getHistoryForUser } from "@/lib/history"
 import { Navbar } from "@/components/navbar"
 import { Card } from "@/components/ui/card"
 import { FileText, CheckCircle2, Loader2, XCircle, Download } from "lucide-react"
+import { permissions } from "@/lib/permissions"
 
 export default async function HistoryPage() {
-  const user = await requireAuth()
+  const user = await requirePermission(permissions.history)
   const history = await getHistoryForUser(user.id)
 
   const formatDate = (date: Date) => {
