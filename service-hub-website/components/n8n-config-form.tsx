@@ -6,13 +6,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
+import { n8nFlows } from "@/lib/n8n-flows"
 
 export function N8nConfigForm({
   initialBaseUrl,
   hasApiKey,
+  initialFlowPaths,
 }: {
   initialBaseUrl: string
   hasApiKey: boolean
+  initialFlowPaths: Record<string, string>
 }) {
   const [show, setShow] = useState(false)
   const [state, formAction, pending] = useActionState<N8nConfigState | null, FormData>(
@@ -56,6 +59,31 @@ export function N8nConfigForm({
           Enviada nos headers <code>X-API-KEY</code> e <code>Authorization: Bearer</code>. Armazenada
           criptografada. {hasApiKey && "Já existe uma apikey salva."}
         </p>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <Label>Webhooks por flow</Label>
+          <p className="text-muted-foreground text-xs">
+            Caminho relativo de cada workflow no n8n. Deixe em branco para usar o padrão do código.
+          </p>
+        </div>
+        {Object.values(n8nFlows).map((flow) => (
+          <div key={flow.id} className="space-y-1">
+            <Label htmlFor={`path-${flow.id}`} className="text-sm">
+              {flow.name}
+            </Label>
+            <Input
+              id={`path-${flow.id}`}
+              name={`path:${flow.id}`}
+              defaultValue={initialFlowPaths[flow.id] ?? flow.path}
+              placeholder={flow.path}
+            />
+            <p className="text-muted-foreground text-xs">
+              padrão: <code>{flow.path}</code>
+            </p>
+          </div>
+        ))}
       </div>
 
       <div className="flex items-center gap-4">

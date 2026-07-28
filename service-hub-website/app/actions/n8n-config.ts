@@ -4,6 +4,7 @@ import { requirePermission, type User } from "@/lib/auth"
 import { permissions } from "@/lib/permissions"
 import { query } from "@/lib/db"
 import { encryptString } from "@/lib/encryption"
+import { n8nFlows } from "@/lib/n8n-flows"
 
 export interface N8nConfigState {
   success: boolean
@@ -30,6 +31,13 @@ export async function saveN8nConfigAction(
     return { success: false, message: "URL base inválida. Use algo como https://n8n.exemplo.com" }
   }
 
+  // Monta o mapa de paths por flow a partir dos campos "path:<flowId>".
+  const flowPaths: Record<string, string> = {}
+  for (const flowId of Object.keys(n8nFlows)) {
+    const value = (formData.get(`path:${flowId}`) as string | null)?.trim()
+    if (value) flowPaths[flowId] = value
+  }
+
   let enc: string | null = null
   let nonce: string | null = null
   if (apiKey) {
@@ -40,15 +48,16 @@ export async function saveN8nConfigAction(
 
   try {
     await query(
-      `INSERT INTO n8n_config (id, base_url, api_key_encrypted, api_key_nonce, updated_at, updated_by)
-       VALUES (1, $1, $2, $3, now(), $4)
+      `INSERT INTO n8n_config (id, base_url, api_key_encrypted, api_key_nonce, flow_paths, updated_at, updated_by)
+       VALUES (1, $1, $2, $3, $4, now(), $5)
        ON CONFLICT (id) DO UPDATE SET
          base_url = EXCLUDED.base_url,
          api_key_encrypted = COALESCE(EXCLUDED.api_key_encrypted, n8n_config.api_key_encrypted),
          api_key_nonce = COALESCE(EXCLUDED.api_key_nonce, n8n_config.api_key_nonce),
+         flow_paths = EXCLUDED.flow_paths,
          updated_at = now(),
          updated_by = EXCLUDED.updated_by`,
-      [normalizedUrl, enc, nonce, (user as User).id],
+      [normalizedUrl, enc, nonce, JSON.stringify(flowPaths), (user as User).id],
     )
   } catch (err) {
     return {
@@ -57,5 +66,5 @@ export async function saveN8nConfigAction(
     }
   }
 
-  return { success: true, message: "Conexão com o n8n salva com sucesso." }
+  return { success: true, message: "Conexão e webhooks do n8n salvos com sucesso." }
 }
