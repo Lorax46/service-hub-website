@@ -2,7 +2,7 @@ import { requirePermission } from "@/lib/auth"
 import { Navbar } from "@/components/navbar"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Database, FileText, Zap, ArrowRight } from "lucide-react"
+import { Database, FileText, Zap, ArrowRight, Settings } from "lucide-react"
 import Link from "next/link"
 import { permissions, userHasPermission, type Permission } from "@/lib/permissions"
 
@@ -52,6 +52,8 @@ export default async function ToolsPage() {
     },
   ].filter((tool) => userHasPermission(user, tool.permission))
 
+  const isAdmin = userHasPermission(user, permissions.manageUsers)
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar user={user} />
@@ -63,6 +65,23 @@ export default async function ToolsPage() {
         </div>
 
         <div className="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {isAdmin && (
+            <Card className="min-w-0 border-dashed p-4 sm:p-6">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
+                <Settings className="h-6 w-6" />
+              </div>
+              <h2 className="mb-2 font-semibold text-xl">Configurações do n8n</h2>
+              <p className="mb-4 text-muted-foreground text-sm text-pretty">
+                Defina a URL base e a apikey globais da instância n8n usada pelos workflows.
+              </p>
+              <Button asChild className="w-full">
+                <Link href="/dashboard/tools/workflow-automation/settings">
+                  Configurar <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </Card>
+          )}
+
           {tools.map((tool) => (
             <Card key={tool.id} className="min-w-0 p-4 sm:p-6">
               <div className="mb-4 flex items-start justify-between">

@@ -4,7 +4,7 @@ import { requireAuth, type User } from "@/lib/auth"
 import { appendHistoryEntry } from "@/lib/history"
 import { getN8nFlow, type N8nFlowId } from "@/lib/n8n-flows"
 import { flowPermissions, permissions, userHasPermission, type Permission } from "@/lib/permissions"
-import { sendToWebhook } from "@/lib/webhook-client"
+import { sendToWebhook, sendToN8n } from "@/lib/webhook-client"
 
 function getLoggedUserPayload(user: User) {
   return {
@@ -203,12 +203,8 @@ export async function executeN8nFlowAction(flowId: N8nFlowId, payload: Record<st
     return permissionError
   }
 
-  const result = await sendToWebhook(
-    {
-      id: flow.id,
-      name: flow.name,
-      url: flow.url,
-    },
+  const result = await sendToN8n(
+    flow.id,
     withLoggedUserPayload(
       {
         flowId: flow.id,
@@ -280,12 +276,8 @@ export async function shareDataDriftFileAction(payload: Record<string, unknown> 
     return { success: false, message: "Flow n8n não encontrado" }
   }
 
-  const result = await sendToWebhook(
-    {
-      id: flow.id,
-      name: flow.name,
-      url: flow.url,
-    },
+  const result = await sendToN8n(
+    flow.id,
     withLoggedUserPayload(
       {
         flowId: flow.id,
@@ -399,12 +391,8 @@ export async function executeQueryAction(flowId: N8nFlowId, sql: string) {
     return { success: false, message: validationError }
   }
 
-  const result = await sendToWebhook(
-    {
-      id: flow.id,
-      name: flow.name,
-      url: flow.url,
-    },
+  const result = await sendToN8n(
+    flow.id,
     withLoggedUserPayload(
       {
         flowId: flow.id,

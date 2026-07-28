@@ -1,0 +1,6 @@
+# Arquivos de quarentena / temporários do Hermes (não versionar)
+.archive/
+
+# arquivos de ambiente locais
+.deploy/config
+.deploy/TARGET
