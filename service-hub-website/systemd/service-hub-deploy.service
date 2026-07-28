@@ -1,0 +1,11 @@
+[Unit]
+Description=Service Hub pull-based deploy agent
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# Assume que o repo foi clonado em /opt/service-hub-website e o agente tem
+# acesso de leitura ao .env.local (roda como root) e ao docker (grupo docker).
+WorkingDirectory=/opt/service-hub-website/service-hub-website
+ExecStart=/opt/service-hub-website/service-hub-website/systemd/deploy-agent.sh

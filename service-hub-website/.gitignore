@@ -35,3 +35,9 @@ next-env.d.ts
 
 # runtime logs
 /data/history-files/
+
+# arquivos movidos para quarentena (não versionar)
+.archive/
+.deploy/config
+.deploy/TARGET
+systemd/deploy-agent.sh

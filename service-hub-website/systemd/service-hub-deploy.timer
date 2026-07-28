@@ -1,0 +1,11 @@
+[Unit]
+Description=Service Hub deploy agent timer (pull-based CD)
+Documentation=file:///opt/service-hub-website/service-hub-website/docs/DEPLOY.md
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

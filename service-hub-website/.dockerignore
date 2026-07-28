@@ -1,0 +1,13 @@
+node_modules
+.next
+out
+.git
+.env*
+data
+**/*.md
+docs
+systemd
+.github
+deploy
+.dockerignore
+Dockerfile

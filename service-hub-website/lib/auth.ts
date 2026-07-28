@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation"
 
 import { type Permission, userHasPermission } from "@/lib/permissions"
 import { getUserByEmail, type ServerUser } from "@/lib/server-users"
+import { signSession, verifySession, SESSION_MAX_AGE_SECONDS } from "@/lib/session"
 
 export interface User {
   id: string
@@ -19,38 +20,25 @@ export async function getSession(): Promise<User | null> {
     return null
   }
 
-  try {
-    const session = JSON.parse(sessionCookie.value)
-    const user = session.user
-
-    if (
-      typeof user !== "object" ||
-      user === null ||
-      typeof user.id !== "string" ||
-      typeof user.email !== "string" ||
-      typeof user.name !== "string"
-    ) {
-      return null
-    }
-
-    const sessionGroups = Array.isArray(user.groups)
-      ? user.groups.filter((g: unknown): g is string => typeof g === "string")
-      : []
-
-    // Revalida contra o banco para pegar grupos atuais
-    const dbUser: ServerUser | null = await getUserByEmail(user.email)
-    if (!dbUser || !dbUser.isActive) {
-      return null
-    }
-
-    return {
-      id: dbUser.id,
-      email: dbUser.email,
-      name: dbUser.name,
-      groups: sessionGroups.length > 0 ? sessionGroups : dbUser.groups || [],
-    }
-  } catch {
+  // Valida a ASSINATURA do token antes de confiar no payload.
+  // Substitui a leitura de JSON em texto claro (vulneravel a forja).
+  const payload = await verifySession(sessionCookie.value)
+  if (!payload) {
     return null
+  }
+
+  // Revalida contra o banco para pegar grupos/estado atuais e permitir
+  // revogacao imediata (is_active=false expulsa o usuario no proximo request).
+  const dbUser: ServerUser | null = await getUserByEmail(payload.email)
+  if (!dbUser || !dbUser.isActive) {
+    return null
+  }
+
+  return {
+    id: dbUser.id,
+    email: dbUser.email,
+    name: dbUser.name,
+    groups: payload.groups.length > 0 ? payload.groups : dbUser.groups || [],
   }
 }
 
@@ -77,11 +65,13 @@ export async function requirePermission(permission: Permission): Promise<User> {
 export async function setSession(user: User) {
   const cookieStore = await cookies()
   const secureCookies = process.env.SECURE_COOKIES === "true"
-  cookieStore.set("session", JSON.stringify({ user }), {
+  const token = await signSession(user)
+  cookieStore.set("session", token, {
     httpOnly: true,
     secure: secureCookies,
     sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: SESSION_MAX_AGE_SECONDS,
+    path: "/",
   })
 }
 

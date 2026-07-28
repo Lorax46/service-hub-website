@@ -1,0 +1,5 @@
+# Exemplo de config do deploy-agent (bash). Copie para .deploy/config e ajuste.
+DEPLOY_DIR=/opt/service-hub-website
+COMPOSE_DIR=/opt/service-hub-website/service-hub-website
+REGISTRY_IMAGE=ghcr.io/lorax46/service-hub-website
+HEALTH_URL=http://localhost:3000/

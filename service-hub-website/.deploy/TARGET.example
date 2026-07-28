@@ -1,0 +1,7 @@
+# Arquivo de versão alvo por ambiente (pull-based CD).
+# Escreva aqui a tag aprovada (ex.: v0.1.0) para este ambiente fazer deploy dela.
+# O deploy-agent (systemd timer) puxa essa imagem do GHCR periodicamente.
+#
+# Para promover este ambiente para uma nova versão, basta trocar a tag abaixo
+# e aguardar o próximo ciclo (ou rodar: systemctl start service-hub-deploy).
+v0.1.0

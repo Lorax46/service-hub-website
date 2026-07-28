@@ -1,7 +1,11 @@
 // Seed do usuario admin inicial. Uso: node scripts/seed-admin.mjs
-// Env: SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD, SEED_ADMIN_NAME
+// Carrega .env.local automaticamente (via load-env.mjs).
+// Env: SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD, SEED_ADMIN_NAME, DATABASE_URL
 import bcrypt from "bcryptjs"
 import { Pool } from "pg"
+import { loadEnv } from "./load-env.mjs"
+
+await loadEnv()
 
 const email = process.env.SEED_ADMIN_EMAIL || "admin@servicehub.com"
 const password = process.env.SEED_ADMIN_PASSWORD || "admin123"

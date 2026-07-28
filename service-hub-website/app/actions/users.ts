@@ -5,8 +5,12 @@ import { redirect } from "next/navigation"
 import { requirePermission, type User } from "@/lib/auth"
 import { permissions } from "@/lib/permissions"
 import {
+  createGroup,
   createUser,
+  deleteGroup,
   deleteUser,
+  getGroupMembers,
+  listGroups,
   listUsers,
   setUserPassword,
   updateUser,
@@ -21,16 +25,26 @@ function normalizeGroups(formData: FormData): string[] {
 }
 
 export async function listUsersAction(): Promise<
-  { id: string; email: string; name: string; groups: string[]; isActive: boolean }[]
+  { id: string; email: string; name: string; groups: string[]; status: string; isActive: boolean; lastLogin: string | null }[]
 > {
   await requirePermission(permissions.manageUsers)
   return listUsers()
 }
 
+export async function listGroupsAction(): Promise<
+  { id: string; name: string; description: string; members: { id: string; name: string; email: string }[] }[]
+> {
+  await requirePermission(permissions.manageUsers)
+  const groups = await listGroups()
+  return await Promise.all(
+    groups.map(async (g) => ({ ...g, members: await getGroupMembers(g.id) })),
+  )
+}
+
 export async function createUserAction(formData: FormData) {
   await requirePermission(permissions.manageUsers)
   const email = String(formData.get("email") || "").trim()
-  const password = String(formData.get("password") || "")
+  const password = String(formData.get("password") || "").trim()
   const name = String(formData.get("name") || "").trim()
   const groups = normalizeGroups(formData)
 
@@ -43,7 +57,10 @@ export async function createUserAction(formData: FormData) {
 
   try {
     await createUser({ email, password, name, groups })
-    return { success: true, message: "Usuário criado com sucesso." }
+    return {
+      success: true,
+      message: `Usuário "${name}" criado como convite. Ele aparece como "Convidado" até o primeiro login.`,
+    }
   } catch (e: any) {
     if (String(e?.message || "").includes("users_email_key")) {
       return { success: false, message: "Já existe um usuário com este email." }
@@ -87,4 +104,32 @@ export async function deleteUserAction(formData: FormData) {
   if (!id) return { success: false, message: "ID inválido." }
   await deleteUser(id)
   return { success: true, message: "Usuário excluído." }
+}
+
+export async function createGroupAction(formData: FormData) {
+  await requirePermission(permissions.manageUsers)
+  const name = String(formData.get("name") || "").trim().toLowerCase()
+  const description = String(formData.get("description") || "").trim()
+
+  if (!name) {
+    return { success: false, message: "O nome do grupo é obrigatório." }
+  }
+
+  try {
+    await createGroup(name, description)
+    return { success: true, message: `Grupo "${name}" criado.` }
+  } catch (e: any) {
+    if (String(e?.message || "").includes("groups_name_key")) {
+      return { success: false, message: "Já existe um grupo com este nome." }
+    }
+    return { success: false, message: "Erro ao criar grupo." }
+  }
+}
+
+export async function deleteGroupAction(formData: FormData) {
+  await requirePermission(permissions.manageUsers)
+  const id = String(formData.get("id") || "")
+  if (!id) return { success: false, message: "ID inválido." }
+  await deleteGroup(id)
+  return { success: true, message: "Grupo excluído." }
 }

@@ -1,0 +1,43 @@
+# docker-compose.yml — Service Hub
+# Variáveis lidas de .env (compose) ou do ambiente:
+#   IMAGE          imagem + tag a rodar (ex: ghcr.io/lorax46/service-hub-website:v1.2.3)
+#   PORT           porta no host (default 3000)
+# O .env deve conter: DATABASE_URL, SESSION_SECRET, SECURE_COOKIES,
+#   SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD, SEED_ADMIN_NAME, NODE_ENV
+services:
+  app:
+    image: ${IMAGE:-ghcr.io/lorax46/service-hub-website:latest}
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env
+    # Permite que o app alcance o Postgres do HOST (ex.: host.docker.internal:5432)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Postgres interno opcional: docker compose --profile with-db up -d
+  db:
+    image: postgres:16-alpine
+    profiles: ["with-db"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-servicehub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-servicehub}
+      POSTGRES_DB: ${POSTGRES_DB:-servicehub}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-servicehub}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
