@@ -4,3 +4,7 @@
 # arquivos de ambiente locais
 .deploy/config
 .deploy/TARGET
+
+# Arquivos de ambiente locais sensíveis
+service-hub-website/.env.local
+

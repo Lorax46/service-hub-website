@@ -1,0 +1,46 @@
+# Service Hub - Docker Compose
+# Deployado em 100.117.95.111:3000
+# Migração concluída: 2026-07-30
+
+services:
+  app:
+    image: service-hub-website:local
+    build:
+      context: ./service-hub-website
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgres://servicehub:***@db:5432/servicehub
+      - SECURE_COOKIES=false
+    env_file:
+      - ./service-hub-website/.env.local
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - prod
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: servicehub
+      POSTGRES_PASSWORD: servicehub
+      POSTGRES_DB: servicehub
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./service-hub-website/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U servicehub -d servicehub"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    profiles:
+      - prod
+
+volumes:
+  pgdata:
