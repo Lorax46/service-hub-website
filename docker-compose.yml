@@ -23,6 +23,8 @@ services:
     restart: unless-stopped
     profiles:
       - prod
+    volumes:
+      - app_data:/app/data
 
   db:
     image: postgres:16-alpine
@@ -44,3 +46,4 @@ services:
 
 volumes:
   pgdata:
+  app_data:

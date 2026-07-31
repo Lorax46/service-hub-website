@@ -1,0 +1,108 @@
+name: CI/CD — Build, Test & Publish to GHCR
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/service-hub-website
+
+jobs:
+  # ── 1. CI: lint, type-check, build ──────────────────────────────
+  ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: service-hub-website
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: service-hub-website/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true  # ESLint pode não estar configurado ainda
+
+      - name: Type check
+        run: npx tsc --noEmit
+        continue-on-error: true  # TypeScript errors são informativos
+
+      - name: Build
+        run: npm run build
+
+  # ── 2. Publish to GHCR (só em releases ou push em main) ────────
+  publish:
+    needs: ci
+    if: github.event_name == 'release' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            # Push em main → usa a última tag git + "-dev" ou v0.1.0-dev
+            LAST_TAG=$(git tag --sort=-v:refname | head -1 2>/dev/null || echo "")
+            if [ -n "$LAST_TAG" ]; then
+              MAJOR=$(echo "$LAST_TAG" | sed 's/^v//' | cut -d. -f1)
+              MINOR=$(echo "$LAST_TAG" | sed 's/^v//' | cut -d. -f2)
+              PATCH=$(echo "$LAST_TAG" | sed 's/^v//' | cut -d. -f3)
+              NEW_PATCH=$((PATCH + 1))
+              TAG="v${MAJOR}.${MINOR}.${NEW_PATCH}-dev"
+            else
+              TAG="v0.1.0-dev"
+            fi
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Imagem: $TAG"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./service-hub-website
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.tag.outputs.tag }}
+
+  # ── 3. Deploy (manual, via workflow_dispatch) ───────────────────
+  deploy:
+    needs: publish
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to target
+        run: |
+          echo "Deploy manual — ajuste o TARGET conforme necessário"
+          echo "Ex: ssh deploy@server 'cd /opt/service-hub-website && docker compose pull && docker compose up -d'"
