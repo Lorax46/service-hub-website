@@ -31,7 +31,9 @@ EXPOSE 3000
 ENV PORT 3000
 
 # HEALTHCHECK - verifica endpoint /api/health
+# Usa 127.0.0.1 (IPv4) explicito: 'localhost' pode resolver ::1 (IPv6) primeiro e
+# o Next escuta so em 0.0.0.0 (IPv4), causando 'unhealthy' falso.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-  CMD node -e "import('node:http').then(http=>{const req=http.request('http://localhost:3000/api/health',(res)=>{process.exit(res.statusCode===200?0:1);});req.on('error',()=>process.exit(1));req.end();})"
+  CMD node -e "import('node:http').then(http=>{const req=http.request('http://127.0.0.1:3000/api/health',(res)=>{process.exit(res.statusCode===200?0:1);});req.on('error',()=>process.exit(1));req.end();})"
 
 CMD ["node", "node_modules/next/dist/bin/next", "start", "--hostname", "0.0.0.0", "--port", "3000"]
