@@ -30,7 +30,8 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Matcher de rotas que requerem autenticação
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+    // Matcher de rotas que requerem autenticação.
+    // Exclui assets estaticos: _next, favicon, icones do app e arquivos de public/.
+    '/((?!_next/static|_next/image|favicon.ico|icon\\.svg|icon-light-32x32\\.png|icon-dark-32x32\\.png|apple-icon\\.png|public/).*)',
   ],
 };
