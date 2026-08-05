@@ -84,12 +84,15 @@ function SubmitButton({
   children,
   variant = "default",
   size = "sm",
+  pending: pendingProp,
 }: {
   children: React.ReactNode
   variant?: "default" | "outline" | "destructive" | "secondary"
   size?: "sm" | "default" | "icon"
+  pending?: boolean
 }) {
-  const { pending } = useFormStatus()
+  const { pending: formPending } = useFormStatus()
+  const pending = pendingProp ?? formPending
   return (
     <Button type="submit" variant={variant} size={size} disabled={pending}>
       {pending ? "…" : children}
@@ -301,13 +304,25 @@ function UserCard({
 // --------------------------------------------------------------------------
 
 function CreateGroupForm({ onDone }: { onDone: () => void }) {
-  const [state, formAction] = useActionState(createGroupAction, null)
+  const [state, setState] = useState<{ success: boolean; message: string } | null>(null)
+  const [pending, startTransition] = useTransition()
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    startTransition(async () => {
+      const result = await createGroupAction(null, fd)
+      setState(result)
+      if (result.success) onDone()
+    })
+  }
+
   if (state?.success) {
     onDone()
     return <p className="text-sm text-emerald-600">Grupo criado!</p>
   }
   return (
-    <form action={formAction} className="grid gap-4 md:grid-cols-2">
+    <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
       <div className="space-y-2">
         <Label htmlFor="gname">Nome do grupo</Label>
         <Input id="gname" name="name" placeholder="ex.: reports, queries" required />
@@ -320,7 +335,7 @@ function CreateGroupForm({ onDone }: { onDone: () => void }) {
         <p className="text-destructive text-sm md:col-span-2">{state.message}</p>
       )}
       <div className="md:col-span-2">
-        <SubmitButton>
+        <SubmitButton pending={pending}>
           <Users className="mr-2 h-4 w-4" /> Criar grupo
         </SubmitButton>
       </div>

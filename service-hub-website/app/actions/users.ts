@@ -41,7 +41,7 @@ export async function listGroupsAction(): Promise<
   )
 }
 
-export async function createUserAction(formData: FormData) {
+export async function createUserAction(_prevState: unknown, formData: FormData) {
   await requirePermission(permissions.manageUsers)
   const email = String(formData.get("email") || "").trim()
   const password = String(formData.get("password") || "").trim()
@@ -69,7 +69,7 @@ export async function createUserAction(formData: FormData) {
   }
 }
 
-export async function updateUserAction(formData: FormData) {
+export async function updateUserAction(_prevState: unknown, formData: FormData) {
   await requirePermission(permissions.manageUsers)
   const id = String(formData.get("id") || "")
   const name = String(formData.get("name") || "").trim()
@@ -83,7 +83,7 @@ export async function updateUserAction(formData: FormData) {
   return { success: true, message: "Usuário atualizado." }
 }
 
-export async function setPasswordAction(formData: FormData) {
+export async function setPasswordAction(_prevState: unknown, formData: FormData) {
   await requirePermission(permissions.manageUsers)
   const id = String(formData.get("id") || "")
   const password = String(formData.get("password") || "")
@@ -94,7 +94,7 @@ export async function setPasswordAction(formData: FormData) {
   return { success: true, message: "Senha redefinida." }
 }
 
-export async function deleteUserAction(formData: FormData) {
+export async function deleteUserAction(_prevState: unknown, formData: FormData) {
   await requirePermission(permissions.manageUsers)
   const id = String(formData.get("id") || "")
   const current = (await requirePermission(permissions.manageUsers)) as User
@@ -106,7 +106,7 @@ export async function deleteUserAction(formData: FormData) {
   return { success: true, message: "Usuário excluído." }
 }
 
-export async function createGroupAction(formData: FormData) {
+export async function createGroupAction(_prevState: unknown, formData: FormData) {
   await requirePermission(permissions.manageUsers)
   const name = String(formData.get("name") || "").trim().toLowerCase()
   const description = String(formData.get("description") || "").trim()
@@ -126,7 +126,7 @@ export async function createGroupAction(formData: FormData) {
   }
 }
 
-export async function deleteGroupAction(formData: FormData) {
+export async function deleteGroupAction(_prevState: unknown, formData: FormData) {
   await requirePermission(permissions.manageUsers)
   const id = String(formData.get("id") || "")
   if (!id) return { success: false, message: "ID inválido." }

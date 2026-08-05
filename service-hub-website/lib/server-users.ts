@@ -317,3 +317,42 @@ export async function deleteGroup(id: string): Promise<void> {
   // memberships caem em cascata
   await query("DELETE FROM groups WHERE id = $1", [id])
 }
+
+export async function updateGroup(
+  id: string,
+  input: { name?: string; description?: string },
+): Promise<Group> {
+  const { rows } = await query<Group>(
+    `UPDATE groups SET
+       name = COALESCE($2, name),
+       description = COALESCE($3, description)
+     WHERE id = $1
+     RETURNING id, name, description`,
+    [
+      id,
+      input.name !== undefined ? input.name.trim().toLowerCase() : null,
+      input.description !== undefined ? input.description.trim() : null,
+    ],
+  )
+  if (rows.length === 0) {
+    throw new Error("Grupo não encontrado")
+  }
+  return rows[0]
+}
+
+export async function addGroupMember(groupId: string, userId: string): Promise<void> {
+  await query(
+    "INSERT INTO user_group_memberships (user_id, group_id) VALUES ($1,$2) ON CONFLICT DO NOTHING",
+    [userId, groupId],
+  )
+  await syncUserGroups(userId)
+}
+
+export async function removeGroupMember(groupId: string, userId: string): Promise<void> {
+  await query(
+    "DELETE FROM user_group_memberships WHERE user_id = $1 AND group_id = $2",
+    [userId, groupId],
+  )
+  await syncUserGroups(userId)
+}
+
