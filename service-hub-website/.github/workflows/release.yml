@@ -1,7 +1,8 @@
 name: Release (build & push image)
 
 # Dispara no push de uma tag semântica (vX.Y.Z).
-# Publica a imagem em ghcr.io/<owner>/<repo>:<tag> e também :latest.
+# Publica a imagem multi-arch (linux/amd64 + linux/arm64) em
+# ghcr.io/<owner>/<repo>:<tag> e também :latest.
 on:
   push:
     tags: ["v*"]
@@ -15,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up QEMU (emulação arm64/amd64)
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -35,11 +39,12 @@ jobs:
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push
+      - name: Build and push (multi-arch)
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
